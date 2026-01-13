@@ -1,4 +1,4 @@
-import { alchemy } from 'evm-providers'
+import { drpc } from 'evm-providers'
 import { type Hex, createPublicClient, http } from 'viem'
 import {
   arbitrum,
@@ -74,18 +74,17 @@ export async function handleQuery({
     return '0x' as const
   }
 
-  // const ALCHEMY_API_KEY = envVar('ALCHEMY_API_KEY', env)
-  const ALCHEMY_API_KEY = '_chxYh4fY4m2EfHsfA-PL'
+  const DRPC_API_KEY = envVar('DRPC_API_KEY', env)
 
   const l2Client = createPublicClient({
     chain,
     transport: http(
-      // There's an Alchemy issue with Worldchain Sepolia when using API keys, so we'll use the public endpoint for now
+      // World subsidizes RPC usage, so we'll use those endpoints for mainnet and testnet
       chain.id === worldchainSepolia.id
         ? 'https://worldchain-sepolia.g.alchemy.com/public'
-        : ALCHEMY_API_KEY
-          ? alchemy(chain.id, ALCHEMY_API_KEY)
-          : undefined
+        : chain.id === worldchain.id
+          ? 'https://worldchain-mainnet.g.alchemy.com/public'
+          : drpc(chain.id, DRPC_API_KEY)
     ),
   })
 

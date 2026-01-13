@@ -1,7 +1,7 @@
 import type { Hex } from 'viem'
 
 export interface Env {
-  ALCHEMY_API_KEY: string
+  DRPC_API_KEY: string
   SIGNER_PRIVATE_KEY: Hex
 }
 
