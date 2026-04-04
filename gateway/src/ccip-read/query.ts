@@ -3,6 +3,7 @@ import { type Hex, createPublicClient, http } from 'viem'
 import {
   arbitrum,
   arbitrumSepolia,
+  arcTestnet,
   base,
   baseSepolia,
   celo,
@@ -24,6 +25,7 @@ import { type Env, envVar } from '../env'
 import { dnsDecodeName, resolverAbi } from './utils'
 
 const supportedChains = [
+  arcTestnet,
   arbitrum,
   arbitrumSepolia,
   base,
@@ -84,7 +86,9 @@ export async function handleQuery({
         ? 'https://worldchain-sepolia.g.alchemy.com/public'
         : chain.id === worldchain.id
           ? 'https://worldchain-mainnet.g.alchemy.com/public'
-          : drpc(chain.id, DRPC_API_KEY)
+          : chain.id === arcTestnet.id
+            ? `https://lb.drpc.live/arc-testnet/${DRPC_API_KEY}`
+            : drpc(chain.id, DRPC_API_KEY)
     ),
   })
 
