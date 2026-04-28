@@ -8,14 +8,14 @@ pragma solidity ^0.8.20;
 // ▐▌  ▐▌▐▌ ▐▌▐▌  ▐▌▐▙▄▄▖▗▄▄▞▘  █ ▝▚▄▞▘▐▌  ▐▌▐▙▄▄▖
 // ***********************************************
 
-import {ENS} from "@ensdomains/ens-contracts/registry/ENS.sol";
-import {IExtendedResolver} from "@ensdomains/ens-contracts/resolvers/profiles/IExtendedResolver.sol";
-import {NameEncoder} from "@ensdomains/ens-contracts/utils/NameEncoder.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {strings} from "@arachnid/string-utils/strings.sol";
+import { ENS } from "@ensdomains/ens-contracts/registry/ENS.sol";
+import { IExtendedResolver } from "@ensdomains/ens-contracts/resolvers/profiles/IExtendedResolver.sol";
+import { NameEncoder } from "@ensdomains/ens-contracts/utils/NameEncoder.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { strings } from "@arachnid/string-utils/strings.sol";
 
-import {ENSDNSUtils} from "./lib/ENSDNSUtils.sol";
-import {SignatureVerifier} from "./lib/SignatureVerifier.sol";
+import { ENSDNSUtils } from "./lib/ENSDNSUtils.sol";
+import { SignatureVerifier } from "./lib/SignatureVerifier.sol";
 
 interface IResolverService {
     function stuffedResolveCall(
@@ -23,18 +23,19 @@ interface IResolverService {
         bytes calldata data,
         uint64 targetChainId,
         address targetRegistryAddress
-    )
-        external
-        view
-        returns (bytes memory result, uint64 expires, bytes memory sig);
+    ) external view returns (bytes memory result, uint64 expires, bytes memory sig);
 }
 
 interface IResolver {
-    function addr(bytes32 node) external view returns (address);
+    function addr(
+        bytes32 node
+    ) external view returns (address);
 }
 
 interface INameWrapper {
-    function ownerOf(uint256 id) external view returns (address owner);
+    function ownerOf(
+        uint256 id
+    ) external view returns (address owner);
 }
 
 /// @author NameStone
@@ -70,11 +71,7 @@ contract L1Resolver is IExtendedResolver, Ownable {
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event L2RegistrySet(
-        bytes32 node,
-        uint64 targetChainId,
-        address targetRegistryAddress
-    );
+    event L2RegistrySet(bytes32 node, uint64 targetChainId, address targetRegistryAddress);
     event GatewayChanged(string url);
     event SignerChanged(address signer);
 
@@ -85,13 +82,7 @@ contract L1Resolver is IExtendedResolver, Ownable {
     error Unauthorized();
     error InvalidSignature();
     error UnsupportedName();
-    error OffchainLookup(
-        address sender,
-        string[] urls,
-        bytes callData,
-        bytes4 callbackFunction,
-        bytes extraData
-    );
+    error OffchainLookup(address sender, string[] urls, bytes callData, bytes4 callbackFunction, bytes extraData);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -153,29 +144,19 @@ contract L1Resolver is IExtendedResolver, Ownable {
         string[] memory parts = new string[](strings.count(s, delim) + 1);
 
         // Populate the parts array into ['sub', 'name', 'eth']
-        for (uint i = 0; i < parts.length; i++) {
+        for (uint256 i = 0; i < parts.length; i++) {
             parts[i] = strings.toString(strings.split(s, delim));
         }
 
         // get the 2LD + TLD (final 2 parts), regardless of how many labels the name has
-        string memory parentName = string.concat(
-            parts[parts.length - 2],
-            ".",
-            parts[parts.length - 1]
-        );
+        string memory parentName = string.concat(parts[parts.length - 2], ".", parts[parts.length - 1]);
 
         // Encode the parent name
         (, bytes32 parentNode) = NameEncoder.dnsEncodeName(parentName);
 
         L2Registry memory targetL2Registry = l2Registry[parentNode];
 
-        return
-            stuffedResolveCall(
-                name,
-                data,
-                targetL2Registry.chainId,
-                targetL2Registry.registryAddress
-            );
+        return stuffedResolveCall(name, data, targetL2Registry.chainId, targetL2Registry.registryAddress);
     }
 
     /// @notice Callback used by CCIP read compatible clients to parse and verify the response.
@@ -183,10 +164,7 @@ contract L1Resolver is IExtendedResolver, Ownable {
         bytes calldata response,
         bytes calldata extraData
     ) external view returns (bytes memory) {
-        (address _signer, bytes memory result) = SignatureVerifier.verify(
-            extraData,
-            response
-        );
+        (address _signer, bytes memory result) = SignatureVerifier.verify(extraData, response);
 
         if (_signer != signer) {
             revert InvalidSignature();
@@ -195,10 +173,10 @@ contract L1Resolver is IExtendedResolver, Ownable {
         return result;
     }
 
-    function supportsInterface(bytes4 interfaceID) public pure returns (bool) {
-        return
-            interfaceID == type(IExtendedResolver).interfaceId ||
-            interfaceID == 0x01ffc9a7; // ERC-165 interface
+    function supportsInterface(
+        bytes4 interfaceID
+    ) public pure returns (bool) {
+        return interfaceID == type(IExtendedResolver).interfaceId || interfaceID == 0x01ffc9a7; // ERC-165 interface
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -206,13 +184,17 @@ contract L1Resolver is IExtendedResolver, Ownable {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Sets the URL for the resolver service.
-    function setURL(string calldata _url) external onlyOwner {
+    function setURL(
+        string calldata _url
+    ) external onlyOwner {
         url = _url;
         emit GatewayChanged(_url);
     }
 
     /// @notice Sets the signers for the resolver service.
-    function setSigner(address _signer) external onlyOwner {
+    function setSigner(
+        address _signer
+    ) external onlyOwner {
         signer = _signer;
         emit SignerChanged(_signer);
     }
@@ -229,11 +211,7 @@ contract L1Resolver is IExtendedResolver, Ownable {
         address targetRegistryAddress
     ) internal view returns (bytes memory) {
         bytes memory callData = abi.encodeWithSelector(
-            IResolverService.stuffedResolveCall.selector,
-            name,
-            data,
-            targetChainId,
-            targetRegistryAddress
+            IResolverService.stuffedResolveCall.selector, name, data, targetChainId, targetRegistryAddress
         );
 
         string[] memory urls = new string[](1);

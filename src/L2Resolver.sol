@@ -8,29 +8,22 @@ pragma solidity ^0.8.20;
 // ▐▌  ▐▌▐▌ ▐▌▐▌  ▐▌▐▙▄▄▖▗▄▄▞▘  █ ▝▚▄▞▘▐▌  ▐▌▐▙▄▄▖
 // ***********************************************
 
-import {ABIResolver} from "@ensdomains/ens-contracts/resolvers/profiles/ABIResolver.sol";
-import {AddrResolver} from "@ensdomains/ens-contracts/resolvers/profiles/AddrResolver.sol";
-import {ContentHashResolver} from "@ensdomains/ens-contracts/resolvers/profiles/ContentHashResolver.sol";
-import {ExtendedResolver} from "@ensdomains/ens-contracts/resolvers/profiles/ExtendedResolver.sol";
-import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import {Multicallable} from "@ensdomains/ens-contracts/resolvers/Multicallable.sol";
-import {TextResolver} from "@ensdomains/ens-contracts/resolvers/profiles/TextResolver.sol";
+import { ABIResolver } from "@ensdomains/ens-contracts/resolvers/profiles/ABIResolver.sol";
+import { AddrResolver } from "@ensdomains/ens-contracts/resolvers/profiles/AddrResolver.sol";
+import { ContentHashResolver } from "@ensdomains/ens-contracts/resolvers/profiles/ContentHashResolver.sol";
+import { ExtendedResolver } from "@ensdomains/ens-contracts/resolvers/profiles/ExtendedResolver.sol";
+import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { Multicallable } from "@ensdomains/ens-contracts/resolvers/Multicallable.sol";
+import { TextResolver } from "@ensdomains/ens-contracts/resolvers/profiles/TextResolver.sol";
 
-import {IUniversalSignatureValidator} from "./interfaces/IUniversalSignatureValidator.sol";
-import {L2Registry} from "./L2Registry.sol";
+import { IUniversalSignatureValidator } from "./interfaces/IUniversalSignatureValidator.sol";
+import { L2Registry } from "./L2Registry.sol";
 
 /// @title Durin Resolver
 /// @author NameStone
 /// @notice Resolver to store standard ENS records
 /// @dev This contract is inherited by L2Registry, making registry methods available via `address(this)`
-contract L2Resolver is
-    Multicallable,
-    ABIResolver,
-    AddrResolver,
-    ContentHashResolver,
-    TextResolver,
-    ExtendedResolver
-{
+contract L2Resolver is Multicallable, ABIResolver, AddrResolver, ContentHashResolver, TextResolver, ExtendedResolver {
     using MessageHashUtils for bytes32;
 
     /*//////////////////////////////////////////////////////////////
@@ -39,9 +32,7 @@ contract L2Resolver is
 
     /// @dev ERC-6492: Signature Validation for Predeploy Contracts
     IUniversalSignatureValidator private immutable universalSignatureValidator =
-        IUniversalSignatureValidator(
-            0x164af34fAF9879394370C7f09064127C043A35E9
-        );
+        IUniversalSignatureValidator(0x164af34fAF9879394370C7f09064127C043A35E9);
 
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -54,7 +45,9 @@ contract L2Resolver is
                                MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
-    modifier unexpiredSignature(uint256 expiration) {
+    modifier unexpiredSignature(
+        uint256 expiration
+    ) {
         if (block.timestamp > expiration) {
             revert SignatureExpired();
         }
@@ -73,13 +66,11 @@ contract L2Resolver is
         address signer,
         bytes calldata signature
     ) public unexpiredSignature(expiration) {
-        bytes32 sigHash = keccak256(
-            abi.encodePacked(address(this), node, coinType, a, expiration)
-        ).toEthSignedMessageHash();
+        bytes32 sigHash =
+            keccak256(abi.encodePacked(address(this), node, coinType, a, expiration)).toEthSignedMessageHash();
 
         if (
-            !isAuthorisedForAddress(signer, node) ||
-            !universalSignatureValidator.isValidSig(signer, sigHash, signature)
+            !isAuthorisedForAddress(signer, node) || !universalSignatureValidator.isValidSig(signer, sigHash, signature)
         ) {
             revert Unauthorized(node);
         }
@@ -95,13 +86,11 @@ contract L2Resolver is
         address signer,
         bytes calldata signature
     ) public unexpiredSignature(expiration) {
-        bytes32 sigHash = keccak256(
-            abi.encodePacked(address(this), node, key, value, expiration)
-        ).toEthSignedMessageHash();
+        bytes32 sigHash =
+            keccak256(abi.encodePacked(address(this), node, key, value, expiration)).toEthSignedMessageHash();
 
         if (
-            !isAuthorisedForAddress(signer, node) ||
-            !universalSignatureValidator.isValidSig(signer, sigHash, signature)
+            !isAuthorisedForAddress(signer, node) || !universalSignatureValidator.isValidSig(signer, sigHash, signature)
         ) {
             revert Unauthorized(node);
         }
@@ -118,13 +107,10 @@ contract L2Resolver is
         address signer,
         bytes calldata signature
     ) public unexpiredSignature(expiration) {
-        bytes32 sigHash = keccak256(
-            abi.encodePacked(address(this), node, hash, expiration)
-        ).toEthSignedMessageHash();
+        bytes32 sigHash = keccak256(abi.encodePacked(address(this), node, hash, expiration)).toEthSignedMessageHash();
 
         if (
-            !isAuthorisedForAddress(signer, node) ||
-            !universalSignatureValidator.isValidSig(signer, sigHash, signature)
+            !isAuthorisedForAddress(signer, node) || !universalSignatureValidator.isValidSig(signer, sigHash, signature)
         ) {
             revert Unauthorized(node);
         }
@@ -142,13 +128,11 @@ contract L2Resolver is
         address signer,
         bytes calldata signature
     ) public unexpiredSignature(expiration) {
-        bytes32 sigHash = keccak256(
-            abi.encodePacked(address(this), node, contentType, data, expiration)
-        ).toEthSignedMessageHash();
+        bytes32 sigHash =
+            keccak256(abi.encodePacked(address(this), node, contentType, data, expiration)).toEthSignedMessageHash();
 
         if (
-            !isAuthorisedForAddress(signer, node) ||
-            !universalSignatureValidator.isValidSig(signer, sigHash, signature)
+            !isAuthorisedForAddress(signer, node) || !universalSignatureValidator.isValidSig(signer, sigHash, signature)
         ) {
             revert Unauthorized(node);
         }
@@ -194,7 +178,9 @@ contract L2Resolver is
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Reverts instead of returning false so the modifier that uses this function has better error messages
-    function isAuthorised(bytes32 node) internal view override returns (bool) {
+    function isAuthorised(
+        bytes32 node
+    ) internal view override returns (bool) {
         return isAuthorisedForAddress(msg.sender, node);
     }
 
@@ -204,13 +190,7 @@ contract L2Resolver is
         public
         view
         virtual
-        override(
-            Multicallable,
-            ABIResolver,
-            AddrResolver,
-            ContentHashResolver,
-            TextResolver
-        )
+        override(Multicallable, ABIResolver, AddrResolver, ContentHashResolver, TextResolver)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
